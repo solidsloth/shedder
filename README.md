@@ -3,6 +3,9 @@
 Parametric shed designer. Give it dimensions, get exact stud placement, a cut
 list, and (eventually) step-by-step build instructions.
 
+**[Open the designer →](https://solidsloth.github.io/shedder/)** — runs entirely
+in the browser, nothing to install.
+
 This version covers **steps 1–4 of the plan**: the data model, wall stud
 layout, corner posts, plates, the cut list, **openings** (doors and windows
 with king/jack studs, span-sized headers, sills, and cripples), the **roof** —

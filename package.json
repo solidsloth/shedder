@@ -5,6 +5,14 @@
   "license": "AGPL-3.0-or-later",
   "author": "Mark Escher",
   "type": "module",
+  "homepage": "https://solidsloth.github.io/shedder/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/solidsloth/shedder.git"
+  },
+  "bugs": {
+    "url": "https://github.com/solidsloth/shedder/issues"
+  },
   "keywords": [
     "shed",
     "framing",
