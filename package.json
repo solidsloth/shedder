@@ -1,0 +1,28 @@
+{
+  "name": "shedder",
+  "version": "0.4.0",
+  "description": "Parametric shed designer — framing engine + web demo",
+  "license": "AGPL-3.0-or-later",
+  "author": "Mark Escher",
+  "type": "module",
+  "keywords": [
+    "shed",
+    "framing",
+    "carpentry",
+    "cut-list",
+    "stud-layout",
+    "rafter",
+    "parametric-design"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --test test/framing.test.ts",
+    "build": "tsc",
+    "demo": "npm run build && node scripts/bundle-demo.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}
