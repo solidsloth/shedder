@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { NominalSize } from '../core/framing.ts';
 import type { Form } from './form.ts';
 import { OpeningsEditor } from './OpeningsEditor.tsx';
+import { ThemeToggle } from './ThemeToggle.tsx';
+import type { Theme } from './theme.ts';
 
 /** Narrow the setter to the field being set, so a typo is a compile error. */
 export type SetField = <K extends keyof Form>(key: K, value: Form[K]) => void;
@@ -116,19 +118,26 @@ const sizes = (...v: NominalSize[]) => v.map((s) => [s, s] as [NominalSize, stri
 const inches = (...v: number[]) => v.map((n) => [String(n), `${n}"`] as [string, string]);
 
 export function Controls({
-  form, set, footprint,
+  form, set, footprint, theme, cycleTheme,
 }: {
   form: Form;
   set: SetField;
   /** The footprint echoed back in words, e.g. `12' × 8' × 8' high`. */
   footprint: string;
+  theme: Theme;
+  cycleTheme: () => void;
 }) {
   return (
     <aside className="border-sidebar-border bg-sidebar text-sidebar-foreground max-h-screen overflow-y-auto border-r px-5 pt-6 pb-16 lg:sticky lg:top-0 lg:self-start">
-      <h1 className="text-[15px] leading-none font-semibold tracking-tight">Shed framing</h1>
-      <p className="text-muted-foreground mt-1.5 mb-3 text-[11px]">
-        Floor, walls, roof &amp; cut list · v0.4
-      </p>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <h1 className="text-[15px] leading-none font-semibold tracking-tight">Shed framing</h1>
+          <p className="text-muted-foreground mt-1.5 mb-3 text-[11px]">
+            Floor, walls, roof &amp; cut list · v0.4
+          </p>
+        </div>
+        <ThemeToggle theme={theme} cycle={cycleTheme} />
+      </div>
 
       <Accordion
         type="multiple"

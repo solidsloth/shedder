@@ -60,8 +60,8 @@ export function CornerDetail({ spec }: { spec: ShedSpec }) {
           <HatchDefs />
           <g transform={`translate(${pad},${pad})`}>
             {/* wall envelopes */}
-            <rect x={0} y={0} width={X(view)} height={X(t)} fill="#fff" stroke="#A6ADA6" />
-            <rect x={0} y={0} width={X(t)} height={X(view)} fill="#fff" stroke="#A6ADA6" />
+            <rect x={0} y={0} width={X(view)} height={X(t)} className="envelope" />
+            <rect x={0} y={0} width={X(t)} height={X(view)} className="envelope" />
 
             {/* through wall: local x along the wall is the building's x */}
             {cornerPost('through', spec.cornerType, t, s).map((p, i) => (

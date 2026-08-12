@@ -26,7 +26,12 @@ export function useWidth<T extends HTMLElement>(fallback = 760): [RefObject<T | 
   return [ref, width];
 }
 
-/** 45° hatch for pieces shown cut through: headers, nailers, the ridge board. */
+/**
+ * 45° hatch for pieces shown cut through: headers, nailers, the ridge board.
+ *
+ * The two colours are classes, not attributes, so the pattern retints with the
+ * theme along with everything else on the sheet.
+ */
 export function HatchDefs() {
   return (
     <defs>
@@ -37,8 +42,8 @@ export function HatchDefs() {
         patternUnits="userSpaceOnUse"
         patternTransform="rotate(45)"
       >
-        <rect width={5} height={5} fill="#E0C795" />
-        <line x1={0} y1={0} x2={0} y2={5} stroke="#A07D35" strokeWidth={1.4} />
+        <rect width={5} height={5} className="hatch-ground" />
+        <line x1={0} y1={0} x2={0} y2={5} className="hatch-rule" strokeWidth={1.4} />
       </pattern>
     </defs>
   );

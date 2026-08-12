@@ -18,6 +18,8 @@ come next.
 ```
 src/core/framing.ts   the engine — pure functions, no DOM, no framework
 test/framing.test.ts  56 tests, node:test
+test/theme.test.ts    6 tests — the two halves of theming can't share code,
+                      so these pin the contract between them
 index.html            Vite entry — just a mount point
 src/demo/             the React UI
   App.tsx               state, layout, the sheet
@@ -30,6 +32,7 @@ src/demo/             the React UI
   CutList.tsx           every stick
   svg.tsx               dimension lines, hatch, readouts, width + scan hooks
   form.ts               control state ⇄ ShedSpec
+  theme.tsx             light/dark/system + the toggle
   style.css             theme tokens + the sheet's own styles
 src/components/ui/    shadcn components (generated, yours to edit)
 vite.config.js        build config + the single-file inliner
@@ -64,8 +67,34 @@ this repo, not a dependency, so retheming them is just editing them. There is no
 webfont: `shadcn init` pulls in Geist, which emits five `.woff2` files and would
 break the single-file build, so it was removed in favour of a system sans stack.
 
-A `.dark` palette is defined but nothing toggles it. A dark *sheet* needs light
-lines on a dark ground, which is a design job rather than a token swap.
+## Light, dark, and system
+
+The toggle in the sidebar picks **light**, **dark**, or **system**. System is
+the default and a live setting, not just the opening guess: while it is
+selected the page keeps following the OS, so a machine that flips to dark in
+the evening flips the drawing with it, no reload. An explicit choice is
+absolute and persists in `localStorage` under `shedder:theme`.
+
+A blocking script in `index.html` resolves the theme **before first paint**, so
+a dark-mode visitor never sees a white flash. It duplicates a few lines of
+`theme.tsx` by necessity — it has to run before any module loads. The two must
+agree on the storage key, the class name, and what to do with an unrecognised
+stored value, or you get a flash of the wrong theme; there is a test for exactly
+that (see below).
+
+**Dark is a repaint of the sheet, not an inversion.** Inverting would have made
+the wood grey and the drawing unreadable. Instead the ground goes dark and warm,
+the members stay recognisably pine — slightly deeper so they don't glare — and
+the drafting layer moves to a bright teal that plays the role the dark green
+plays in daylight. Chrome and sheet share that accent in both themes:
+`--primary` and `--mark` are always the same colour.
+
+Every colour the drawings use is a token, and the SVG components set **no**
+colours inline — the hatch pattern, the footprint outline, and the corner-detail
+envelopes are all classes. That is what makes the dark theme a palette swap
+instead of a second set of rules, and it is worth preserving: a literal `#hex`
+in a `.sheet` rule or a `fill="#..."` in a component is a light-coloured patch
+waiting to appear on a dark ground.
 
 ## Commands
 

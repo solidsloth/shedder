@@ -125,7 +125,7 @@ export function FloorPlan({ floor }: { floor: FloorFraming }) {
               ))}
 
               {/* footprint outline — the walls land on this line */}
-              <rect x={0} y={0} width={X(W)} height={X(D)} fill="none" stroke="#14171A" strokeWidth={1} />
+              <rect x={0} y={0} width={X(W)} height={X(D)} className="footprint" />
 
               {acrossDepth ? (
                 <>

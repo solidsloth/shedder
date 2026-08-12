@@ -4,7 +4,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
   <title>Shedder - Shed framing</title>
+  <script>
+    // Runs before first paint so a dark-mode visitor never sees a white flash.
+    // React picks the same value up in src/demo/theme.tsx and takes over from
+    // here — the storage key and the class name have to match that file.
+    try {
+      // Anything that isn't an explicit choice means follow the system, which
+      // is also how readStored() in theme.tsx treats an unrecognised value.
+      // If the two disagree you get a flash of the wrong theme on load.
+      var t = localStorage.getItem('shedder:theme');
+      if (t !== 'light' && t !== 'dark') t = 'system';
+      var dark = t === 'dark' ||
+        (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.classList.toggle('dark', dark);
+      document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+    } catch (e) { /* storage blocked — fall through to the light default */ }
+  </script>
 </head>
 
 <body>

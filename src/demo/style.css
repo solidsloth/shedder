@@ -99,50 +99,90 @@
   --sidebar-border: #e7e7df;
   --sidebar-ring: #16564a;
 
-  /* ── sheet ── unchanged: this is the drawing's palette */
+  /* ── sheet ── the drawing's own palette. Paper ground, ink lines, pine
+     members. Every colour the SVGs use is a token here so the dark theme is a
+     swap rather than a second set of rules. */
   --paper: #e6e7e1;
   --panel: #f3f4ef;
   --ink: #14171a;
   --soft: #5b635d;
   --rule: #a6ada6;
-  --pine: #e0c795;
-  --pine-edge: #a07d35;
   --mark: #16564a;
   --flag: #8c2f1e;
+
+  --pine: #e0c795; /* studs, plates, rafters, joists */
+  --pine-edge: #a07d35; /* every member's outline */
+  --pine-mid: #d2b274; /* kings, sills, rim joists */
+  --pine-deep: #c6a45e; /* jacks */
+  --pine-pale: #ebddb4; /* cripples, blocking */
+  --plate-grey: #cfcfc4; /* plate stacks in the roof section */
+  --skid-fill: #c9c2ac; /* skids read as underneath */
+  --skid-edge: #8a8467;
+  --sheet-line: #14171a; /* footprint outline */
+  --sheet-face: #ffffff; /* wall envelope in the corner detail */
+
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
 }
 
-/* Defined so a `.dark` toggle is a small step later. Nothing sets it today —
-   a dark sheet needs its own palette (light lines on a dark ground), which is
-   a design job, not a token swap. */
+/*
+ * Dark: a drafting table at night rather than an inverted sheet.
+ *
+ * Inverting would have made the wood grey and the drawing unreadable, so the
+ * ground goes dark and warm, the members stay recognisably pine — a little
+ * deeper so they don't glare — and the drafting layer (dimension lines,
+ * witness ticks, readout figures) goes to a bright teal that carries the same
+ * role the dark green does in daylight. Chrome and sheet keep sharing one
+ * accent: --primary and --mark are the same colour in both themes.
+ */
 .dark {
-  --background: #17170f;
-  --foreground: #f2f2ea;
-  --card: #201f17;
-  --card-foreground: #f2f2ea;
-  --popover: #201f17;
-  --popover-foreground: #f2f2ea;
-  --primary: #7fbfae;
-  --primary-foreground: #10241f;
-  --secondary: #2a291f;
-  --secondary-foreground: #f2f2ea;
-  --muted: #2a291f;
-  --muted-foreground: #a8a898;
-  --accent: #2a291f;
-  --accent-foreground: #7fbfae;
-  --destructive: #d4674f;
+  /* chrome */
+  --background: #131511;
+  --foreground: #ecede5;
+  --card: #1b1e18;
+  --card-foreground: #ecede5;
+  --popover: #1b1e18;
+  --popover-foreground: #ecede5;
+  --primary: #6fc0ae;
+  --primary-foreground: #0e2420;
+  --secondary: #24271f;
+  --secondary-foreground: #ecede5;
+  --muted: #24271f;
+  --muted-foreground: #a3a898;
+  --accent: #262a21;
+  --accent-foreground: #6fc0ae;
+  --destructive: #dd8168;
   --border: #ffffff1a;
   --input: #ffffff26;
-  --ring: #7fbfae;
-  --sidebar: #201f17;
-  --sidebar-foreground: #f2f2ea;
-  --sidebar-primary: #7fbfae;
-  --sidebar-primary-foreground: #10241f;
-  --sidebar-accent: #2a291f;
-  --sidebar-accent-foreground: #7fbfae;
-  --sidebar-border: #ffffff1a;
-  --sidebar-ring: #7fbfae;
+  --ring: #6fc0ae;
+  --sidebar: #1b1e18;
+  --sidebar-foreground: #ecede5;
+  --sidebar-primary: #6fc0ae;
+  --sidebar-primary-foreground: #0e2420;
+  --sidebar-accent: #24271f;
+  --sidebar-accent-foreground: #6fc0ae;
+  --sidebar-border: #ffffff14;
+  --sidebar-ring: #6fc0ae;
+
+  /* sheet */
+  --paper: #191b19;
+  --panel: #212420;
+  --ink: #e7e8e2;
+  --soft: #98a099;
+  --rule: #4b524b;
+  --mark: #6fc0ae;
+  --flag: #dd8168;
+
+  --pine: #c8a86e;
+  --pine-edge: #7d6231;
+  --pine-mid: #b8955d;
+  --pine-deep: #a37f45;
+  --pine-pale: #dcc796;
+  --plate-grey: #565a51;
+  --skid-fill: #454a3e;
+  --skid-edge: #6b6a52;
+  --sheet-line: #d6d8d0;
+  --sheet-face: #262a24;
 }
 
 @layer base {
@@ -215,16 +255,20 @@
   fill: var(--ink);
 }
 
+/* the 45° hatch, for pieces shown cut through */
+.sheet .hatch-ground { fill: var(--pine); }
+.sheet .hatch-rule { stroke: var(--pine-edge); }
+
 /* framing members */
 .sheet .stud { fill: var(--pine); stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
 .sheet .stud:hover, .sheet .stud.on { fill: var(--mark); stroke: var(--mark); }
 .sheet .plate { fill: var(--pine); stroke: var(--pine-edge); stroke-width: 1; }
 .sheet .nailer { fill: url(#hatch); stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
 .sheet .nailer:hover { stroke: var(--mark); stroke-width: 1.5; }
-.sheet .king { fill: #d2b274; stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
-.sheet .jack { fill: #c6a45e; stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
-.sheet .cripple { fill: #ebddb4; stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
-.sheet .sill { fill: #d2b274; stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
+.sheet .king { fill: var(--pine-mid); stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
+.sheet .jack { fill: var(--pine-deep); stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
+.sheet .cripple { fill: var(--pine-pale); stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
+.sheet .sill { fill: var(--pine-mid); stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
 .sheet .king:hover, .sheet .jack:hover, .sheet .cripple:hover, .sheet .sill:hover {
   fill: var(--mark);
   stroke: var(--mark);
@@ -235,18 +279,22 @@
 .sheet .rolabel { font-size: 9.5px; fill: var(--mark); text-anchor: middle; }
 .sheet .rafter { fill: var(--pine); stroke: var(--pine-edge); stroke-width: 1.2; stroke-linejoin: round; }
 .sheet .ridgeb { fill: url(#hatch); stroke: var(--pine-edge); stroke-width: 1.2; }
-.sheet .plateb { fill: #cfcfc4; stroke: var(--rule); stroke-width: 1; }
+.sheet .plateb { fill: var(--plate-grey); stroke: var(--rule); stroke-width: 1; }
 .sheet .ghost { fill: none; stroke: var(--rule); stroke-width: 1; stroke-dasharray: 3 3; }
 
 /* floor plan — skids read as underneath, everything else sits on top */
-.sheet .skid { fill: #c9c2ac; stroke: #8a8467; stroke-width: 1; cursor: pointer; }
+.sheet .skid { fill: var(--skid-fill); stroke: var(--skid-edge); stroke-width: 1; cursor: pointer; }
 .sheet .joist { fill: var(--pine); stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
-.sheet .rim { fill: #d2b274; stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
-.sheet .block { fill: #ebddb4; stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
+.sheet .rim { fill: var(--pine-mid); stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
+.sheet .block { fill: var(--pine-pale); stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
 .sheet .skid:hover, .sheet .joist:hover, .sheet .rim:hover, .sheet .block:hover {
   fill: var(--mark);
   stroke: var(--mark);
 }
+/* the floor's outside edge — the line the walls land on */
+.sheet .footprint { fill: none; stroke: var(--sheet-line); stroke-width: 1; }
+/* wall envelopes in the corner detail */
+.sheet .envelope { fill: var(--sheet-face); stroke: var(--rule); }
 
 /* the drafting layer: dimension lines, witness ticks, notes */
 .sheet .dim { stroke: var(--mark); stroke-width: 1; fill: none; }

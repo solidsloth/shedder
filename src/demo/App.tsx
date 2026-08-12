@@ -11,6 +11,7 @@ import {
 } from '../core/framing.ts';
 import { INITIAL_FORM, toShedSpec, type Form } from './form.ts';
 import { Controls, type SetField } from './Controls.tsx';
+import { useTheme } from './theme.ts';
 import { CornerDetail } from './CornerDetail.tsx';
 import { CutList } from './CutList.tsx';
 import { FloorPlan } from './FloorPlan.tsx';
@@ -40,6 +41,7 @@ function loadForm(): Form {
 export function App() {
   const [form, setForm] = useState<Form>(loadForm);
   const set: SetField = (key, value) => setForm((f) => ({ ...f, [key]: value }));
+  const { theme, cycle } = useTheme();
 
   useEffect(() => {
     if (import.meta.hot) sessionStorage.setItem(DEV_KEY, JSON.stringify(form));
@@ -73,6 +75,8 @@ export function App() {
       <Controls
         form={form}
         set={set}
+        theme={theme}
+        cycleTheme={cycle}
         footprint={
           shown
             ? `${formatLength(shown.spec.width)} × ${formatLength(
