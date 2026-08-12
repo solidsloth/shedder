@@ -18,7 +18,11 @@ import {
   layoutWall,
   maxJoistSpan,
   parseLength,
+  pieceBoardFeet,
+  shoppingList,
   splicePlate,
+  DEFAULT_KERF,
+  STOCK_LENGTHS,
 } from '../src/core/framing.ts';
 
 // ── Units ────────────────────────────────────────────────────────────────────
@@ -789,4 +793,129 @@ test('impossible openings throw with a useful message', () => {
   assert.throws(() => wall([
     { name: 'a', kind: 'door', center: 72, roWidth: 38, roHeight: 90 },
   ]), /doesn't fit/);
+});
+
+// ── Shopping list ────────────────────────────────────────────────────────────
+
+const row = (
+  size: Parameters<typeof pieceBoardFeet>[0],
+  length: number,
+  qty: number,
+  treated = false,
+) => ({ size, length, qty, labels: ['x'], treated });
+
+test('every cut piece is accounted for on some stick', () => {
+  const shed = layoutShed(defaultShed({ width: 144, depth: 96 }));
+  const rows = cutList([shed.floor!, ...shed.walls, shed.roof!]);
+  const order = shoppingList(rows);
+
+  // Multiset of cut lengths on the sticks must equal the cut list exactly.
+  const want: number[] = [];
+  for (const r of rows) for (let i = 0; i < r.qty; i++) want.push(r.length);
+  const got = order.sticks.flatMap((s) => s.pieces);
+  const key = (a: number[]) => [...a].sort((x, y) => x - y).map((n) => n.toFixed(4)).join('|');
+  assert.equal(key(got), key(want), 'the order lost or invented a piece');
+  assert.equal(order.count, order.sticks.length);
+  assert.equal(order.lines.reduce((s, l) => s + l.qty, 0), order.count);
+});
+
+test('nothing is packed past the length of its stick', () => {
+  const shed = layoutShed(defaultShed({ width: 240, depth: 120 }));
+  const order = shoppingList(cutList([shed.floor!, ...shed.walls, shed.roof!]));
+  for (const s of order.sticks) {
+    const cut = s.pieces.reduce((a, b) => a + b, 0) + DEFAULT_KERF * (s.pieces.length - 1);
+    assert.ok(cut <= s.stockLength + 1e-9, `${s.size}: ${cut}" of cuts on a ${s.stockLength}" stick`);
+    assert.ok(Math.abs(s.offcut - (s.stockLength - cut)) < 1e-9, 'offcut does not match');
+    assert.ok(s.offcut >= 0);
+  }
+});
+
+test('the kerf is charged between pieces but not before the first', () => {
+  // Two 48" pieces fit a 96" stick only if the blade takes nothing.
+  const tight = shoppingList([row('2x4', 48, 2)], { stockLengths: [96], kerf: 0.125 });
+  assert.equal(tight.count, 2, 'a 1/8" kerf means two 48" pieces no longer fit 96"');
+
+  const free = shoppingList([row('2x4', 48, 2)], { stockLengths: [96], kerf: 0 });
+  assert.equal(free.count, 1, 'with no kerf they share one stick');
+  assert.equal(free.sticks[0]!.offcut, 0);
+});
+
+test('stock length is chosen by waste share, not by piece count', () => {
+  // A 91-1/2" stud: one fits a 96", two fit a 192". Two-per-16' wastes less.
+  const order = shoppingList([row('2x4', 91.5, 8)], { stockLengths: [96, 120, 144, 192] });
+  assert.ok(order.lines.every((l) => l.stockLength === 192), 'should buy 16-footers');
+  assert.equal(order.count, 4, '8 studs, 2 per stick');
+  for (const s of order.sticks) assert.equal(s.pieces.length, 2);
+});
+
+test('an exact fit is preferred and leaves no offcut', () => {
+  const order = shoppingList([row('2x4', 144, 3)], { stockLengths: [96, 144, 192, 240] });
+  assert.equal(order.count, 3);
+  assert.ok(order.lines.every((l) => l.stockLength === 144));
+  assert.ok(order.sticks.every((s) => s.offcut === 0));
+  assert.equal(order.wastePercent, 0);
+});
+
+test('treated and untreated never share a stick', () => {
+  const order = shoppingList([row('2x4', 92, 4, true), row('2x4', 92, 4, false)]);
+  for (const s of order.sticks) {
+    assert.ok(
+      s.pieces.every((p) => p === 92),
+      'sanity: all pieces are the same length here',
+    );
+  }
+  const treated = order.lines.filter((l) => l.treated);
+  const plain = order.lines.filter((l) => !l.treated);
+  assert.ok(treated.length > 0 && plain.length > 0, 'both kinds should appear');
+  assert.equal(
+    treated.reduce((s, l) => s + l.qty, 0) + plain.reduce((s, l) => s + l.qty, 0),
+    order.count,
+  );
+});
+
+test('sizes never share a stick either', () => {
+  const order = shoppingList([row('2x4', 60, 2), row('2x6', 60, 2)]);
+  const sizes = new Set(order.lines.map((l) => l.size));
+  assert.deepEqual([...sizes].sort(), ['2x4', '2x6']);
+});
+
+test('you always buy at least as much as you use, and waste is reported', () => {
+  const shed = layoutShed(defaultShed({ width: 144, depth: 96 }));
+  const rows = cutList([shed.floor!, ...shed.walls, shed.roof!]);
+  const order = shoppingList(rows);
+  assert.ok(order.boardFeet >= order.usedBoardFeet - 1e-9, 'bought less than needed');
+  assert.ok(Math.abs(order.usedBoardFeet - boardFeet(rows)) < 1e-9);
+  assert.ok(order.wastePercent >= 0 && order.wastePercent < 60, `waste ${order.wastePercent}%`);
+  // A first-fit-decreasing pass should not be wildly off on a real shed.
+  assert.ok(order.wastePercent < 25, `${order.wastePercent.toFixed(1)}% waste is too high`);
+});
+
+test('a piece longer than any stock is still ordered, with a warning', () => {
+  const order = shoppingList([row('2x6', 300, 1)], { stockLengths: [96, 192] });
+  assert.equal(order.count, 1, 'it still has to appear on the order');
+  assert.equal(order.lines[0]!.stockLength, 192, 'listed against the longest stock');
+  assert.ok(order.warnings.some((w) => w.includes('splicing')));
+});
+
+test('maxStock keeps the long sticks off the list', () => {
+  const order = shoppingList([row('2x4', 91.5, 8)], { maxStock: 144 });
+  assert.ok(order.lines.every((l) => l.stockLength <= 144));
+  assert.throws(() => shoppingList([row('2x4', 91.5, 1)], { maxStock: 48 }), /No stock lengths/);
+});
+
+test('order lines carry the cut pattern behind them', () => {
+  const order = shoppingList([row('2x4', 91.5, 8)], { stockLengths: [192] });
+  const line = order.lines[0]!;
+  assert.equal(line.qty, 4);
+  assert.equal(line.patterns.length, 1, 'all four sticks are cut the same way');
+  assert.deepEqual(line.patterns[0]!.pieces, [91.5, 91.5]);
+  assert.equal(line.patterns[0]!.sticks, 4);
+  // Board feet on the line is for the stock bought, not the pieces used.
+  assert.ok(Math.abs(line.boardFeet - pieceBoardFeet('2x4', 192, 4)) < 1e-9);
+});
+
+test('board feet helper agrees with the cut list total', () => {
+  assert.ok(Math.abs(pieceBoardFeet('2x4', 96, 1) - (2 * 4 * 96) / 144) < 1e-9);
+  assert.ok(Math.abs(boardFeet([row('2x6', 120, 3)]) - pieceBoardFeet('2x6', 120, 3)) < 1e-9);
+  assert.ok(STOCK_LENGTHS.length > 0);
 });

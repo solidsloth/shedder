@@ -6,6 +6,7 @@ import {
   cutList,
   formatLength,
   layoutShed,
+  shoppingList,
   type ShedFraming,
   type ShedSpec,
 } from '../core/framing.ts';
@@ -14,6 +15,7 @@ import { Controls, type SetField } from './Controls.tsx';
 import { useTheme } from './theme.ts';
 import { CornerDetail } from './CornerDetail.tsx';
 import { CutList } from './CutList.tsx';
+import { ShoppingList } from './ShoppingList.tsx';
 import { FloorPlan } from './FloorPlan.tsx';
 import { RoofSection } from './RoofSection.tsx';
 import { WallElevation } from './WallElevation.tsx';
@@ -130,11 +132,17 @@ function Sheet({
   wallsRef: React.RefObject<HTMLDivElement | null>;
   wallsWidth: number;
 }) {
-  const rows = cutList([
-    ...(framing.floor ? [framing.floor] : []),
-    ...framing.walls,
-    ...(framing.roof ? [framing.roof] : []),
-  ]);
+  // Packing the order is the only genuinely expensive thing on this page, so it
+  // is memoised on the framing rather than rerun on every keystroke.
+  const { rows, order } = useMemo(() => {
+    const cuts = cutList([
+      ...(framing.floor ? [framing.floor] : []),
+      ...framing.walls,
+      ...(framing.roof ? [framing.roof] : []),
+    ]);
+    return { rows: cuts, order: shoppingList(cuts, { maxStock: spec.maxStock }) };
+  }, [framing, spec.maxStock]);
+
   const studCount = framing.walls.reduce(
     (n, w) =>
       n +
@@ -201,6 +209,7 @@ function Sheet({
         <CornerDetail spec={spec} />
       </div>
 
+      <ShoppingList order={order} />
       <CutList rows={rows} />
     </>
   );

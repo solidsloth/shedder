@@ -17,7 +17,7 @@ come next.
 
 ```
 src/core/framing.ts   the engine — pure functions, no DOM, no framework
-test/framing.test.ts  56 tests, node:test
+test/framing.test.ts  68 tests, node:test
 test/theme.test.ts    9 tests — the two halves of theming can't share code,
                       so these pin the contract between them
 index.html            Vite entry — just a mount point
@@ -29,7 +29,8 @@ src/demo/             the React UI
   WallElevation.tsx     one wall, looking at it from outside
   RoofSection.tsx       rafter section and cut figures
   CornerDetail.tsx      corner post, plan view
-  CutList.tsx           every stick
+  ShoppingList.tsx      what to buy — stock lengths and quantities
+  CutList.tsx           every piece the shed needs
   svg.tsx               dimension lines, hatch, readouts, width + scan hooks
   form.ts               control state ⇄ ShedSpec
   theme.ts              light/dark/system logic + the cycle (no JSX, so tests can import it)
@@ -126,6 +127,33 @@ the second one, because `file://` blocks ES modules loaded from a separate
 `assets/` file. It costs about 430 KB (130 KB gzipped): React, Radix, and the
 compiled Tailwind. Adding a shadcn component adds to that, so it is worth
 checking the number after `npm run build` rather than adding them freely.
+
+## Cut list vs shopping list
+
+Two different questions, so two tables.
+
+The **cut list** is what the shed needs: every piece grouped by size and length.
+The **shopping list** is what to buy, which means deciding which stick each
+piece comes off — that is the cutting stock problem, and `shoppingList()` in the
+engine solves it with a first-fit-decreasing pass.
+
+Pieces are grouped by board size and by treated/untreated (you cannot cut a PT
+sill plate out of a plain stud), then packed stick by stick. For each stick the
+engine tries every stock length that can hold the longest piece still unplaced,
+fills it longest-first, and keeps whichever length wastes the smallest **share**
+of itself — waste share rather than raw offcut, because you pay by the board
+foot, so two studs out of a 16-footer beat one out of a 10-footer. Ties go to
+the shorter stick, which is cheaper and easier to get home. A ⅛" saw kerf is
+charged between adjacent pieces on a stick, but not before the first.
+
+On a stock 12×8 it lands around 3% offcut, buying 16-footers for studs two at a
+time and 12-footers for the plates with nothing left over. Drop **Longest stick**
+to 12' and it correctly falls back to one stud per 8-footer.
+
+**It is a good answer, not a provably optimal one.** Cutting stock is NP-hard;
+first-fit-decreasing typically lands within a few percent of optimal. It also
+assumes every stick is usable end to end — no crooks, no split ends — so buy a
+little over.
 
 ## Pointing at pieces
 

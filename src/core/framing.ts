@@ -1714,10 +1714,227 @@ export function cutList(framings: CutListSource[]): CutListRow[] {
   );
 }
 
+/** Board feet in `qty` pieces of this size and length. */
+export function pieceBoardFeet(size: NominalSize, length: number, qty = 1): number {
+  const [nomT, nomW] = size.split('x').map(Number);
+  return (nomT * nomW * length * qty) / 144;
+}
+
 /** Total board feet, useful for a quick cost sanity check. */
 export function boardFeet(rows: CutListRow[]): number {
-  return rows.reduce((sum, r) => {
-    const [nomT, nomW] = r.size.split('x').map(Number);
-    return sum + (nomT * nomW * r.length * r.qty) / 144;
-  }, 0);
+  return rows.reduce((sum, r) => sum + pieceBoardFeet(r.size, r.length, r.qty), 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shopping list
+//
+// The cut list says what pieces you need. This says what to BUY — which means
+// deciding, for every piece, which stick it gets cut from. That is the cutting
+// stock problem, and it is NP-hard, so what follows is a heuristic, not an
+// optimum. See the note on `shoppingList` for what it does and where it gives
+// up ground.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Saw blade width lost at every cut between two pieces on one stick. */
+export const DEFAULT_KERF = 0.125;
+
+export interface ShoppingOptions {
+  /** Lengths the yard sells. Defaults to STOCK_LENGTHS. */
+  stockLengths?: number[];
+  /** Longest stick you can actually get home. Trims the list above. */
+  maxStock?: number;
+  /** Saw kerf between adjacent pieces on one stick. */
+  kerf?: number;
+}
+
+/** One stick, and what comes off it. */
+export interface StickPlan {
+  size: NominalSize;
+  treated: boolean;
+  stockLength: number;
+  /** Cut lengths taken from this stick, longest first. */
+  pieces: number[];
+  /** What is left after those cuts and their kerfs. */
+  offcut: number;
+}
+
+/** One line of the order: buy this many of this board at this length. */
+export interface ShoppingLine {
+  size: NominalSize;
+  treated: boolean;
+  stockLength: number;
+  qty: number;
+  boardFeet: number;
+  /** How many sticks are cut this way, keyed by the pattern. Longest first. */
+  patterns: { pieces: number[]; sticks: number; offcut: number }[];
+}
+
+export interface ShoppingList {
+  lines: ShoppingLine[];
+  sticks: StickPlan[];
+  /** Total sticks to buy. */
+  count: number;
+  /** Board feet purchased. */
+  boardFeet: number;
+  /** Board feet that end up in the building. */
+  usedBoardFeet: number;
+  /** Offcut as a share of what you buy, 0–100. */
+  wastePercent: number;
+  warnings: string[];
+}
+
+/** Greedily fill one stick of `capacity` from `pool`, longest piece first. */
+function fillStick(pool: number[], capacity: number, kerf: number): number[] {
+  const taken: number[] = [];
+  let used = 0;
+  for (let i = 0; i < pool.length; i++) {
+    const piece = pool[i]!;
+    // The first piece off a stick costs no kerf; every one after it does.
+    const cost = taken.length === 0 ? piece : piece + kerf;
+    if (used + cost <= capacity + 1e-9) {
+      taken.push(i);
+      used += cost;
+    }
+  }
+  return taken;
+}
+
+/**
+ * Turn a cut list into an order.
+ *
+ * Pieces are grouped by board size and by treated/untreated — you cannot cut a
+ * PT sill plate out of a plain stud — then packed stick by stick. For each
+ * stick the engine tries every stock length that can hold the longest piece
+ * still unplaced, greedily fills it longest-first, and keeps whichever length
+ * wastes the smallest *share* of itself. Ties go to the shorter stick, which is
+ * cheaper to buy and easier to get home.
+ *
+ * Waste share rather than raw offcut is the right target because you pay by the
+ * board foot: two 8' studs out of a 16' stick beat one out of a 10'.
+ *
+ * **This is a good answer, not the best one.** Optimal cutting stock is
+ * NP-hard; a first-fit-decreasing pass like this typically lands within a few
+ * percent. It also assumes every stick is usable end to end — no crooks, no
+ * split ends — so buy a little over on a real trip.
+ */
+export function shoppingList(rows: CutListRow[], options: ShoppingOptions = {}): ShoppingList {
+  const warnings: string[] = [];
+  const kerf = options.kerf ?? DEFAULT_KERF;
+  const maxStock = options.maxStock ?? Math.max(...STOCK_LENGTHS);
+  const lengths = [...(options.stockLengths ?? STOCK_LENGTHS)]
+    .filter((l) => l <= maxStock)
+    .sort((a, b) => a - b);
+  if (!lengths.length) throw new Error('No stock lengths available at or under the maximum.');
+  const longest = lengths[lengths.length - 1]!;
+
+  // Group by what can actually be cut from the same stick.
+  const groups = new Map<string, { size: NominalSize; treated: boolean; pieces: number[] }>();
+  for (const r of rows) {
+    const key = `${r.size}|${r.treated}`;
+    let g = groups.get(key);
+    if (!g) {
+      g = { size: r.size, treated: r.treated, pieces: [] };
+      groups.set(key, g);
+    }
+    for (let i = 0; i < r.qty; i++) g.pieces.push(r.length);
+  }
+
+  const sticks: StickPlan[] = [];
+
+  for (const g of groups.values()) {
+    // Longest first: the awkward pieces get placed while the stick is empty.
+    const pool = [...g.pieces].sort((a, b) => b - a);
+
+    const tooLong = pool.filter((p) => p > longest + 1e-9);
+    if (tooLong.length) {
+      warnings.push(
+        `${g.size}: ${tooLong.length} piece${tooLong.length > 1 ? 's' : ''} longer than the ` +
+          `${formatLength(longest)} stock (up to ${formatLength(tooLong[0]!)}). Each is listed as ` +
+          `its own stick — they need splicing over a support, or a special order.`,
+      );
+    }
+
+    while (pool.length) {
+      const longestLeft = pool[0]!;
+      let best: { stockLength: number; taken: number[] } | null = null;
+      let bestWaste = Infinity;
+
+      for (const stockLength of lengths) {
+        if (stockLength < longestLeft - 1e-9) continue; // cannot hold it
+        const taken = fillStick(pool, stockLength, kerf);
+        if (!taken.length) continue;
+        const cut = taken.reduce((s, i) => s + pool[i]!, 0) + kerf * (taken.length - 1);
+        const waste = (stockLength - cut) / stockLength;
+        // Strictly better only, so ties keep the shorter stick already found.
+        if (waste < bestWaste - 1e-9) {
+          bestWaste = waste;
+          best = { stockLength, taken };
+        }
+      }
+
+      if (!best) {
+        // Only reachable for an over-long piece: give it the longest stick and
+        // move on, so the order still accounts for it.
+        best = { stockLength: longest, taken: [0] };
+      }
+
+      const pieces = best.taken.map((i) => pool[i]!);
+      const cut = pieces.reduce((s, p) => s + p, 0) + kerf * (pieces.length - 1);
+      sticks.push({
+        size: g.size,
+        treated: g.treated,
+        stockLength: best.stockLength,
+        pieces,
+        offcut: Math.max(0, best.stockLength - cut),
+      });
+      // Remove back to front so the earlier indices stay valid.
+      for (const i of [...best.taken].sort((a, b) => b - a)) pool.splice(i, 1);
+    }
+  }
+
+  // Collapse to order lines, remembering the distinct cut patterns behind each.
+  const lines = new Map<string, ShoppingLine>();
+  for (const s of sticks) {
+    const key = `${s.size}|${s.treated}|${s.stockLength}`;
+    let line = lines.get(key);
+    if (!line) {
+      line = {
+        size: s.size,
+        treated: s.treated,
+        stockLength: s.stockLength,
+        qty: 0,
+        boardFeet: 0,
+        patterns: [],
+      };
+      lines.set(key, line);
+    }
+    line.qty += 1;
+    line.boardFeet = pieceBoardFeet(s.size, s.stockLength, line.qty);
+
+    const signature = s.pieces.join(',');
+    const pattern = line.patterns.find((p) => p.pieces.join(',') === signature);
+    if (pattern) pattern.sticks += 1;
+    else line.patterns.push({ pieces: s.pieces, sticks: 1, offcut: s.offcut });
+  }
+
+  const ordered = [...lines.values()].sort(
+    (a, b) =>
+      a.size.localeCompare(b.size) ||
+      Number(a.treated) - Number(b.treated) ||
+      a.stockLength - b.stockLength,
+  );
+  for (const line of ordered) line.patterns.sort((a, b) => b.sticks - a.sticks);
+
+  const bought = ordered.reduce((s, l) => s + l.boardFeet, 0);
+  const used = boardFeet(rows);
+
+  return {
+    lines: ordered,
+    sticks,
+    count: sticks.length,
+    boardFeet: bought,
+    usedBoardFeet: used,
+    wastePercent: bought > 0 ? ((bought - used) / bought) * 100 : 0,
+    warnings,
+  };
 }
