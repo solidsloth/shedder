@@ -1,5 +1,5 @@
 // Theming has two halves that must agree but can't share code: the blocking
-// script in index.html, which runs before any module loads, and theme.tsx,
+// script in index.html, which runs before any module loads, and theme.ts,
 // which takes over afterwards. These tests pin the contract between them, and
 // pin the rule that keeps the dark sheet complete — every sheet colour is a
 // token, and no component paints one inline.
@@ -77,7 +77,7 @@ test('the pre-paint script resolves every stored/OS combination', () => {
     ['system', false, false, 'following system, OS light'],
     ['dark', false, true, 'chose dark, OS light'],
     ['light', true, false, 'chose light, OS dark'],
-    // Must match readStored() in theme.tsx, which falls back to 'system'.
+    // Must match readStored() in theme.ts, which falls back to 'system'.
     // Disagreeing here means a flash of the wrong theme on load.
     ['garbage', true, true, 'unrecognised value follows the system'],
   ];

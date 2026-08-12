@@ -18,7 +18,7 @@ come next.
 ```
 src/core/framing.ts   the engine — pure functions, no DOM, no framework
 test/framing.test.ts  56 tests, node:test
-test/theme.test.ts    6 tests — the two halves of theming can't share code,
+test/theme.test.ts    9 tests — the two halves of theming can't share code,
                       so these pin the contract between them
 index.html            Vite entry — just a mount point
 src/demo/             the React UI
@@ -32,7 +32,8 @@ src/demo/             the React UI
   CutList.tsx           every stick
   svg.tsx               dimension lines, hatch, readouts, width + scan hooks
   form.ts               control state ⇄ ShedSpec
-  theme.tsx             light/dark/system + the toggle
+  theme.ts              light/dark/system logic + the cycle (no JSX, so tests can import it)
+  ThemeToggle.tsx       the one-button cycle
   style.css             theme tokens + the sheet's own styles
 src/components/ui/    shadcn components (generated, yours to edit)
 vite.config.js        build config + the single-file inliner
@@ -69,15 +70,24 @@ break the single-file build, so it was removed in favour of a system sans stack.
 
 ## Light, dark, and system
 
-The toggle in the sidebar picks **light**, **dark**, or **system**. System is
-the default and a live setting, not just the opening guess: while it is
-selected the page keeps following the OS, so a machine that flips to dark in
-the evening flips the drawing with it, no reload. An explicit choice is
-absolute and persists in `localStorage` under `shedder:theme`.
+One button in the sidebar header cycles **System → Dark → Light → System**. It
+starts on system, and the icon is whichever mode you're in — monitor, moon, sun.
+Because a single control both reports and changes state, its accessible name
+says both: *"Theme: System. Switch to Dark."*
+
+System is the default and a live setting, not just the opening guess: while it
+is selected the page keeps following the OS, so a machine that flips to dark in
+the evening flips the drawing with it, no reload. An explicit choice is absolute
+— the media-query listener isn't even attached — and persists in `localStorage`
+under `shedder:theme`.
+
+The cycle lives in `theme.ts` (`THEME_CYCLE` / `nextTheme`) rather than in the
+button, so it can be tested. `theme.ts` deliberately has no JSX: the test runner
+strips types but not JSX, so a `.tsx` would be unimportable from `npm test`.
 
 A blocking script in `index.html` resolves the theme **before first paint**, so
 a dark-mode visitor never sees a white flash. It duplicates a few lines of
-`theme.tsx` by necessity — it has to run before any module loads. The two must
+`theme.ts` by necessity — it has to run before any module loads. The two must
 agree on the storage key, the class name, and what to do with an unrecognised
 stored value, or you get a flash of the wrong theme; there is a test for exactly
 that (see below).
