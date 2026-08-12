@@ -1,0 +1,145 @@
+/* Shed framing demo — drawing sheet styling.
+   Imported by main.js, so Vite hot-swaps it without reloading the page. */
+
+:root {
+  --paper:#E6E7E1; --panel:#F3F4EF; --ink:#14171A; --soft:#5B635D;
+  --rule:#A6ADA6; --pine:#E0C795; --pine-edge:#A07D35;
+  --mark:#16564A; --flag:#8C2F1E;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+* { box-sizing:border-box; }
+html,body { margin:0; }
+body {
+  background:var(--paper); color:var(--ink); font-family:var(--mono);
+  font-size:13px; line-height:1.45; -webkit-font-smoothing:antialiased;
+}
+.eyebrow {
+  font-size:10px; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--soft); font-weight:600;
+}
+
+.layout { display:grid; grid-template-columns:284px 1fr; min-height:100vh; }
+@media (max-width:900px){ .layout{ grid-template-columns:1fr; } }
+
+/* ── controls ───────────────────────────────────────────────── */
+aside {
+  background:var(--panel); border-right:1px solid var(--rule);
+  padding:22px 20px 40px; position:sticky; top:0; align-self:start;
+  max-height:100vh; overflow-y:auto;
+}
+@media (max-width:900px){ aside{ position:static; max-height:none; border-right:0; border-bottom:1px solid var(--rule);} }
+aside h1 { font-size:15px; margin:0 0 2px; letter-spacing:-.01em; }
+aside .sub { color:var(--soft); font-size:11px; margin-bottom:24px; }
+fieldset { border:0; border-top:1px solid var(--rule); margin:0 0 18px; padding:14px 0 0; }
+fieldset legend { padding:0 8px 0 0; }
+.field { display:grid; grid-template-columns:1fr 96px; align-items:center; gap:10px; margin-bottom:9px; }
+.field label { font-size:12px; color:var(--ink); }
+input, select {
+  font-family:var(--mono); font-size:12px; width:100%; padding:5px 7px;
+  background:#fff; color:var(--ink); border:1px solid var(--rule); border-radius:2px;
+}
+input:focus-visible, select:focus-visible { outline:2px solid var(--mark); outline-offset:1px; }
+/* Keep the steppers visible — clicking them is the point, not a hover discovery.
+   Firefox already shows them; this is the WebKit/Blink hover-to-reveal default. */
+input[type=number]::-webkit-inner-spin-button { opacity:1; height:20px; }
+input[type=number] { padding-right:3px; }
+.check { display:flex; align-items:center; gap:8px; margin-bottom:9px; font-size:12px; }
+.check input { width:auto; }
+.hint { font-size:10.5px; color:var(--soft); margin:6px 0 0; }
+.hint b { color:var(--mark); }
+
+/* ── sheet ──────────────────────────────────────────────────── */
+main { padding:26px 30px 70px; max-width:1180px; }
+@media (max-width:600px){ main{ padding:20px 16px 50px; } }
+.titleblock {
+  display:flex; flex-wrap:wrap; gap:0 34px; align-items:baseline;
+  border-bottom:2px solid var(--ink); padding-bottom:10px; margin-bottom:26px;
+}
+.titleblock h2 { font-size:18px; margin:0; letter-spacing:-.02em; font-weight:700; }
+.titleblock .stat b { font-weight:600; }
+.titleblock .stat { font-size:12px; color:var(--soft); }
+.titleblock .stat b { color:var(--ink); }
+
+section { margin-bottom:34px; }
+.wallhead { display:flex; align-items:baseline; gap:12px; margin-bottom:2px; }
+.wallhead h3 { font-size:13px; margin:0; font-weight:700; letter-spacing:.02em; }
+.wallhead .meta { font-size:11px; color:var(--soft); }
+.drawing { background:var(--panel); border:1px solid var(--rule); padding:12px 10px 6px; overflow-x:auto; }
+
+svg text { font-family:var(--mono); fill:var(--ink); }
+.stud { fill:var(--pine); stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
+.stud:hover, .stud.on { fill:var(--mark); stroke:var(--mark); }
+.plate { fill:var(--pine); stroke:var(--pine-edge); stroke-width:1; }
+.nailer { fill:url(#hatch); stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
+.nailer:hover { stroke:var(--mark); stroke-width:1.5; }
+.king { fill:#D2B274; stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
+.jack { fill:#C6A45E; stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
+.cripple { fill:#EBDDB4; stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
+.sill { fill:#D2B274; stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
+.king:hover, .jack:hover, .cripple:hover, .sill:hover { fill:var(--mark); stroke:var(--mark); }
+.header { fill:url(#hatch); stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
+.header:hover { stroke:var(--mark); stroke-width:1.5; }
+.ro { fill:none; stroke:var(--mark); stroke-width:1; stroke-dasharray:5 3; }
+.rolabel { font-size:9.5px; fill:var(--mark); text-anchor:middle; }
+.rafter { fill:var(--pine); stroke:var(--pine-edge); stroke-width:1.2; stroke-linejoin:round; }
+.ridgeb { fill:url(#hatch); stroke:var(--pine-edge); stroke-width:1.2; }
+.plateb { fill:#CFCFC4; stroke:var(--rule); stroke-width:1; }
+.ghost { fill:none; stroke:var(--rule); stroke-width:1; stroke-dasharray:3 3; }
+
+/* floor plan — skids read as underneath, everything else sits on top */
+.skid { fill:#C9C2AC; stroke:#8A8467; stroke-width:1; cursor:pointer; }
+.joist { fill:var(--pine); stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
+.rim { fill:#D2B274; stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
+.block { fill:#EBDDB4; stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
+.skid:hover, .joist:hover, .rim:hover, .block:hover { fill:var(--mark); stroke:var(--mark); }
+
+/* roof cut table */
+table.cuts { width:auto; min-width:300px; }
+table.cuts td { padding:3px 22px 3px 0; border-bottom:1px solid var(--rule); }
+table.cuts td:first-child { color:var(--soft); }
+table.cuts td:last-child { text-align:right; font-weight:700; padding-right:0; }
+.dim { stroke:var(--mark); stroke-width:1; fill:none; }
+.witness { stroke:var(--mark); stroke-width:.5; opacity:.55; }
+.dimtext { font-size:9.5px; fill:var(--mark); text-anchor:middle; }
+.note { font-size:9.5px; fill:var(--soft); }
+
+/* readout */
+.readout {
+  display:flex; gap:18px; flex-wrap:wrap; border-top:1px solid var(--rule);
+  margin-top:8px; padding:7px 2px 4px; font-size:11px; color:var(--soft); min-height:30px;
+}
+.readout b { color:var(--mark); font-weight:700; }
+
+/* corner detail */
+.detailrow { display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+.detailrow .legendtext { max-width:360px; font-size:11.5px; color:var(--soft); }
+.detailrow .legendtext p { margin:0 0 8px; }
+
+/* cut list */
+table { border-collapse:collapse; width:100%; font-size:12px; }
+th { text-align:left; font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+     color:var(--soft); font-weight:600; border-bottom:1px solid var(--ink); padding:0 10px 5px 0; }
+td { padding:5px 10px 5px 0; border-bottom:1px solid var(--rule); }
+td.num, th.num { text-align:right; padding-right:18px; }
+tfoot td { border-bottom:0; border-top:2px solid var(--ink); font-weight:700; }
+.pt { color:var(--flag); font-size:10px; letter-spacing:.08em; }
+
+.warn { border-left:3px solid var(--flag); background:#fff; padding:9px 12px; margin-bottom:8px; font-size:11.5px; }
+.warn b { color:var(--flag); }
+
+/* openings editor */
+.opening { border:1px solid var(--rule); background:#fff; padding:8px 9px; margin-bottom:8px; }
+.ophead { display:flex; justify-content:space-between; align-items:center; margin-bottom:7px; }
+.oprow { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:6px; }
+.oprow label { display:block; font-size:10px; color:var(--soft); letter-spacing:.06em; text-transform:uppercase; }
+.oprow label input { margin-top:2px; }
+.oprow input:disabled { background:var(--panel); color:var(--soft); }
+button {
+  font-family:var(--mono); font-size:11px; padding:4px 9px; cursor:pointer;
+  background:#fff; color:var(--ink); border:1px solid var(--rule); border-radius:2px;
+}
+button:hover { border-color:var(--mark); color:var(--mark); }
+button:focus-visible { outline:2px solid var(--mark); outline-offset:1px; }
+.addrow { display:flex; gap:8px; }
+
+@media (prefers-reduced-motion:no-preference){ .stud, .nailer { transition:fill .12s, stroke .12s; } }

@@ -18,26 +18,47 @@ come next.
 ```
 src/core/framing.ts   the engine — pure functions, no DOM, no framework
 test/framing.test.ts  56 tests, node:test
-demo/template.html    UI: floor plan, SVG wall elevations, roof section, corner detail, cut list
-scripts/bundle-demo.mjs  inlines the compiled engine into one openable file
-build/index.html      ← open this in a browser
+index.html            Vite entry — just a mount point
+src/demo/             the React UI
+  App.tsx               state, layout, the sheet
+  Controls.tsx          the sidebar
+  OpeningsEditor.tsx    doors and windows
+  FloorPlan.tsx         plan view of the floor frame
+  WallElevation.tsx     one wall, looking at it from outside
+  RoofSection.tsx       rafter section and cut figures
+  CornerDetail.tsx      corner post, plan view
+  CutList.tsx           every stick
+  svg.tsx               dimension lines, hatch, readouts, width hook
+  form.ts               control state ⇄ ShedSpec
+vite.config.js        build config + the single-file inliner
+build/index.html      ← the built demo
 ```
 
-The engine has no imports. That is deliberate: when you build the mobile
-version, `framing.ts` moves over untouched and only the rendering layer gets
-rewritten. Nothing in the UI computes a framing dimension — it all comes
-through the engine.
+**The engine has no imports, and nothing in the UI computes a framing
+dimension.** That split is the point: `framing.ts` is plain TypeScript with no
+React in it anywhere, so the planned React Native version reuses it untouched
+and only `src/demo/` gets rewritten. Every number on screen — including screen
+positions like `elevBottom` and the rafter outline polygons — comes out of the
+engine.
 
 ## Commands
 
 ```sh
+npm run dev       # vite dev server, hot reload
 npm test          # node --experimental-strip-types --test
-npm run build     # tsc -> dist/
-npm run demo      # build + inline -> build/index.html
+npm run typecheck # tsc --noEmit  (the test runner strips types without checking them)
+npm run build     # vite build -> build/index.html
+npm run preview   # serve the built file
 ```
 
-No dependencies. Node 22 runs the TypeScript directly, `tsc` compiles for the
-browser, and the demo is a single file you can open over `file://`.
+Node 22 runs the engine's TypeScript directly for tests, so `npm test` needs no
+build step. `tsc` never emits anything now — Vite compiles, tsc only checks.
+
+**The build is still one self-contained file.** `vite.config.js` folds the CSS
+and JS back into `build/index.html`, so it works both as a GitHub Pages upload
+and opened straight off disk over `file://` — a normal Vite build would break
+the second one, because `file://` blocks ES modules loaded from a separate
+`assets/` file. It costs about 240 KB (75 KB gzipped), most of that React.
 
 ## Conventions in the engine
 

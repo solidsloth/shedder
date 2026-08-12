@@ -27,7 +27,9 @@ jobs:
           cache: npm
       - run: npm ci
       # node --experimental-strip-types runs the TypeScript directly (Node 22).
+      # It strips types without checking them, so tsc runs separately.
       - run: npm test
+      - run: npm run typecheck
 
   build:
     needs: test
@@ -39,8 +41,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # tsc -> dist/, then inline the engine into build/index.html.
-      - run: npm run demo
+      # Vite bundles the app and inlines it into a single build/index.html.
+      - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
