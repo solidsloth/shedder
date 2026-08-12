@@ -3,7 +3,7 @@
 // None of these know what a stud is — they take numbers already in screen
 // space. Every framing dimension comes from the engine.
 
-import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { useLayoutEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react';
 
 /**
  * Measures a container so a drawing can scale to the room it's actually given.
@@ -116,17 +116,60 @@ export interface ReadoutValue {
   note?: string;
 }
 
+/**
+ * Lets you step through a drawing's pieces with the keyboard.
+ *
+ * Pointing at a piece fills the readout, but that was mouse-only — keyboard and
+ * touch users got nothing at all. Now the drawing itself takes focus and the
+ * arrow keys walk its pieces; Escape clears. The readout is a live region, so
+ * a screen reader announces each piece as you land on it.
+ */
+export function useScan<T>(items: T[], describe: (item: T) => ReadoutValue) {
+  const [value, setValue] = useState<ReadoutValue | null>(null);
+  const at = useRef(-1);
+
+  const show = (i: number) => {
+    at.current = i;
+    setValue(i < 0 ? null : describe(items[i]!));
+  };
+  const step = (delta: number) => {
+    if (items.length) show((at.current + delta + items.length) % items.length);
+  };
+
+  return {
+    value,
+    /** Spread onto each drawn piece. */
+    item: (i: number) => ({ onMouseEnter: () => show(i) }),
+    /** Spread onto the <svg>. */
+    svg: {
+      tabIndex: 0,
+      onKeyDown: (e: KeyboardEvent<SVGSVGElement>) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          step(1);
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          step(-1);
+        } else if (e.key === 'Escape') {
+          show(-1);
+        }
+      },
+      onBlur: () => show(-1),
+    },
+  };
+}
+
 /** The strip under a drawing that fills in as you point at pieces. */
 export function Readout({ hint, value }: { hint: string; value: ReadoutValue | null }) {
   if (!value) {
     return (
-      <div className="readout">
+      <div className="readout" role="status" aria-live="polite">
         <span>{hint}</span>
       </div>
     );
   }
   return (
-    <div className="readout">
+    <div className="readout" role="status" aria-live="polite">
       <span>
         <b>{value.label}</b>
       </span>

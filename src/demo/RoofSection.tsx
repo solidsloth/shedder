@@ -4,14 +4,35 @@
 // included. The section frame has y UP; SVG has y down, so there is exactly one
 // flip, at the group level.
 
-import { useState } from 'react';
-import { formatInches, formatLength, type RoofFraming } from '../core/framing.ts';
-import { CutsTable, HatchDefs, Readout, useWidth, type ReadoutValue } from './svg.tsx';
+import {
+  formatInches,
+  formatLength,
+  type RafterCuts,
+  type RafterProfile,
+  type RoofFraming,
+} from '../core/framing.ts';
+import {
+  CutsTable,
+  HatchDefs,
+  Readout,
+  useScan,
+  useWidth,
+  type ReadoutValue,
+} from './svg.tsx';
+
+const describe = (c: RafterCuts) => (p: RafterProfile): ReadoutValue => ({
+  label: p.label,
+  facts: [
+    { lead: 'cut', value: formatLength(c.rafterLength) },
+    { lead: 'plumb cut', value: formatInches(c.plumbCutLength) },
+    { lead: 'seat', value: `${formatInches(c.seatDepth)} × heel ${formatInches(c.heelPlumb)}` },
+  ],
+});
 
 export function RoofSection({ roof }: { roof: RoofFraming }) {
-  const [hover, setHover] = useState<ReadoutValue | null>(null);
   const [hostRef, hostWidth] = useWidth<HTMLDivElement>(760);
   const c = roof.cuts;
+  const scan = useScan(roof.profiles, describe(c));
 
   const pad = 26;
   const dimBand = 30;
@@ -65,11 +86,12 @@ export function RoofSection({ roof }: { roof: RoofFraming }) {
       <div className="drawing">
         <div ref={hostRef}>
           <svg
+            {...scan.svg}
             width={w}
             height={h}
             viewBox={`0 0 ${w} ${h}`}
             role="img"
-            aria-label="Roof cross-section"
+            aria-label={`Roof cross-section — ${roof.profiles.length} rafters, arrow keys to step through them`}
           >
             <HatchDefs />
             <g transform={`translate(${originX},${originY}) scale(${scale},${-scale})`}>
@@ -94,25 +116,13 @@ export function RoofSection({ roof }: { roof: RoofFraming }) {
                   vectorEffect="non-scaling-stroke"
                 />
               )}
-              {roof.profiles.map((p) => (
+              {roof.profiles.map((p, i) => (
                 <polygon
                   key={p.label}
                   points={p.points.map((q) => `${q.x},${q.y}`).join(' ')}
                   className="rafter"
                   vectorEffect="non-scaling-stroke"
-                  onMouseEnter={() =>
-                    setHover({
-                      label: p.label,
-                      facts: [
-                        { lead: 'cut', value: formatLength(c.rafterLength) },
-                        { lead: 'plumb cut', value: formatInches(c.plumbCutLength) },
-                        {
-                          lead: 'seat',
-                          value: `${formatInches(c.seatDepth)} × heel ${formatInches(c.heelPlumb)}`,
-                        },
-                      ],
-                    })
-                  }
+                  {...scan.item(i)}
                 >
                   <title>{`${p.label} — ${formatLength(c.rafterLength)} overall`}</title>
                 </polygon>
@@ -143,7 +153,10 @@ export function RoofSection({ roof }: { roof: RoofFraming }) {
             </g>
           </svg>
         </div>
-        <Readout hint="Point at a rafter for its cuts." value={hover} />
+        <Readout
+          hint="Point at a rafter for its cuts — or focus the drawing and use the arrow keys."
+          value={scan.value}
+        />
       </div>
       <CutsTable rows={rows} />
     </section>

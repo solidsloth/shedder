@@ -1,5 +1,7 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 /**
  * Fold the built CSS and JS back into index.html.
@@ -52,6 +54,10 @@ export default defineConfig({
   // Relative so the single file works from any path — a Pages sub-directory,
   // or straight off the filesystem.
   base: './',
+  resolve: {
+    // shadcn generates components that import from '@/...'.
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
   build: {
     // build/ rather than Vite's default dist/: the Pages workflow uploads it.
     outDir: 'build',
@@ -62,5 +68,5 @@ export default defineConfig({
     cssCodeSplit: false,
     modulePreload: false,
   },
-  plugins: [react(), inlineEverything()],
+  plugins: [react(), tailwindcss(), inlineEverything()],
 });

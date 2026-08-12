@@ -3,6 +3,9 @@
     "target": "ES2022",
     "module": "ES2022",
     "moduleResolution": "bundler",
+    // No baseUrl: TypeScript 7 removed it, and paths already resolve relative
+    // to this file. Mirrors resolve.alias in vite.config.js.
+    "paths": { "@/*": ["./src/*"] },
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["vite/client"],
     "jsx": "react-jsx",

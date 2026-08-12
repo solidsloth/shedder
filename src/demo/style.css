@@ -1,145 +1,313 @@
-/* Shed framing demo — drawing sheet styling.
-   Imported by main.js, so Vite hot-swaps it without reloading the page. */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Two visual registers, on purpose.
+
+   CHROME — sidebar, title block, warnings, cut list. Modern, sans-serif, light
+   warm-neutral surfaces. This is the tool.
+
+   SHEET — everything under `.sheet`. Keeps the drafting palette and monospace:
+   paper ground, pine members, drafting dimension lines. This is the drawing.
+
+   The two share one accent, the drafting green (--mark / --primary), so the
+   contrast reads as deliberate rather than as two designs bolted together.
+
+   No webfont anywhere. Geist came in with `shadcn init` and was dropped: it
+   emits five .woff2 files, and this project ships as one self-contained
+   index.html you can open over file://.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@theme inline {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI Variable Text",
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--mono);
+  --font-heading: var(--font-sans);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+
+  /* Sheet colours, exposed as utilities so components can reach them. */
+  --color-paper: var(--paper);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-rule: var(--rule);
+  --color-mark: var(--mark);
+  --color-flag: var(--flag);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
 
 :root {
-  --paper:#E6E7E1; --panel:#F3F4EF; --ink:#14171A; --soft:#5B635D;
-  --rule:#A6ADA6; --pine:#E0C795; --pine-edge:#A07D35;
-  --mark:#16564A; --flag:#8C2F1E;
-  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-}
-* { box-sizing:border-box; }
-html,body { margin:0; }
-body {
-  background:var(--paper); color:var(--ink); font-family:var(--mono);
-  font-size:13px; line-height:1.45; -webkit-font-smoothing:antialiased;
-}
-.eyebrow {
-  font-size:10px; letter-spacing:.18em; text-transform:uppercase;
-  color:var(--soft); font-weight:600;
+  --radius: 0.5rem;
+
+  /* ── chrome ── warm neutrals so the paper sheet sits on them naturally */
+  --background: #faf9f6;
+  --foreground: #1a1a17;
+  --card: #ffffff;
+  --card-foreground: #1a1a17;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a17;
+  --primary: #16564a;
+  --primary-foreground: #f5f7f4;
+  --secondary: #f0f0ea;
+  --secondary-foreground: #2a2a24;
+  --muted: #f2f2ec;
+  --muted-foreground: #6b6b5f;
+  --accent: #eaeee7;
+  --accent-foreground: #16564a;
+  --destructive: #8c2f1e;
+  --border: #e3e3da;
+  --input: #d9d9cf;
+  --ring: #16564a;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a1a17;
+  --sidebar-primary: #16564a;
+  --sidebar-primary-foreground: #f5f7f4;
+  --sidebar-accent: #f2f2ec;
+  --sidebar-accent-foreground: #16564a;
+  --sidebar-border: #e7e7df;
+  --sidebar-ring: #16564a;
+
+  /* ── sheet ── unchanged: this is the drawing's palette */
+  --paper: #e6e7e1;
+  --panel: #f3f4ef;
+  --ink: #14171a;
+  --soft: #5b635d;
+  --rule: #a6ada6;
+  --pine: #e0c795;
+  --pine-edge: #a07d35;
+  --mark: #16564a;
+  --flag: #8c2f1e;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
 }
 
-.layout { display:grid; grid-template-columns:284px 1fr; min-height:100vh; }
-@media (max-width:900px){ .layout{ grid-template-columns:1fr; } }
-
-/* ── controls ───────────────────────────────────────────────── */
-aside {
-  background:var(--panel); border-right:1px solid var(--rule);
-  padding:22px 20px 40px; position:sticky; top:0; align-self:start;
-  max-height:100vh; overflow-y:auto;
+/* Defined so a `.dark` toggle is a small step later. Nothing sets it today —
+   a dark sheet needs its own palette (light lines on a dark ground), which is
+   a design job, not a token swap. */
+.dark {
+  --background: #17170f;
+  --foreground: #f2f2ea;
+  --card: #201f17;
+  --card-foreground: #f2f2ea;
+  --popover: #201f17;
+  --popover-foreground: #f2f2ea;
+  --primary: #7fbfae;
+  --primary-foreground: #10241f;
+  --secondary: #2a291f;
+  --secondary-foreground: #f2f2ea;
+  --muted: #2a291f;
+  --muted-foreground: #a8a898;
+  --accent: #2a291f;
+  --accent-foreground: #7fbfae;
+  --destructive: #d4674f;
+  --border: #ffffff1a;
+  --input: #ffffff26;
+  --ring: #7fbfae;
+  --sidebar: #201f17;
+  --sidebar-foreground: #f2f2ea;
+  --sidebar-primary: #7fbfae;
+  --sidebar-primary-foreground: #10241f;
+  --sidebar-accent: #2a291f;
+  --sidebar-accent-foreground: #7fbfae;
+  --sidebar-border: #ffffff1a;
+  --sidebar-ring: #7fbfae;
 }
-@media (max-width:900px){ aside{ position:static; max-height:none; border-right:0; border-bottom:1px solid var(--rule);} }
-aside h1 { font-size:15px; margin:0 0 2px; letter-spacing:-.01em; }
-aside .sub { color:var(--soft); font-size:11px; margin-bottom:24px; }
-fieldset { border:0; border-top:1px solid var(--rule); margin:0 0 18px; padding:14px 0 0; }
-fieldset legend { padding:0 8px 0 0; }
-.field { display:grid; grid-template-columns:1fr 96px; align-items:center; gap:10px; margin-bottom:9px; }
-.field label { font-size:12px; color:var(--ink); }
-input, select {
-  font-family:var(--mono); font-size:12px; width:100%; padding:5px 7px;
-  background:#fff; color:var(--ink); border:1px solid var(--rule); border-radius:2px;
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  /* The number steppers are the point of those fields, not a hover discovery.
+     Firefox shows them already; this is the WebKit/Blink default. */
+  input[type="number"]::-webkit-inner-spin-button {
+    opacity: 1;
+    height: 20px;
+  }
 }
-input:focus-visible, select:focus-visible { outline:2px solid var(--mark); outline-offset:1px; }
-/* Keep the steppers visible — clicking them is the point, not a hover discovery.
-   Firefox already shows them; this is the WebKit/Blink hover-to-reveal default. */
-input[type=number]::-webkit-inner-spin-button { opacity:1; height:20px; }
-input[type=number] { padding-right:3px; }
-.check { display:flex; align-items:center; gap:8px; margin-bottom:9px; font-size:12px; }
-.check input { width:auto; }
-.hint { font-size:10.5px; color:var(--soft); margin:6px 0 0; }
-.hint b { color:var(--mark); }
 
-/* ── sheet ──────────────────────────────────────────────────── */
-main { padding:26px 30px 70px; max-width:1180px; }
-@media (max-width:600px){ main{ padding:20px 16px 50px; } }
-.titleblock {
-  display:flex; flex-wrap:wrap; gap:0 34px; align-items:baseline;
-  border-bottom:2px solid var(--ink); padding-bottom:10px; margin-bottom:26px;
+/* ═════════════════════════════════════════════════════════════════════════
+   THE SHEET
+   Everything below is the drawing set. Monospace, paper ground, and the
+   member colours the SVG classes reference by name.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.sheet {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
 }
-.titleblock h2 { font-size:18px; margin:0; letter-spacing:-.02em; font-weight:700; }
-.titleblock .stat b { font-weight:600; }
-.titleblock .stat { font-size:12px; color:var(--soft); }
-.titleblock .stat b { color:var(--ink); }
 
-section { margin-bottom:34px; }
-.wallhead { display:flex; align-items:baseline; gap:12px; margin-bottom:2px; }
-.wallhead h3 { font-size:13px; margin:0; font-weight:700; letter-spacing:.02em; }
-.wallhead .meta { font-size:11px; color:var(--soft); }
-.drawing { background:var(--panel); border:1px solid var(--rule); padding:12px 10px 6px; overflow-x:auto; }
+.sheet .eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--soft);
+  font-weight: 600;
+}
 
-svg text { font-family:var(--mono); fill:var(--ink); }
-.stud { fill:var(--pine); stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
-.stud:hover, .stud.on { fill:var(--mark); stroke:var(--mark); }
-.plate { fill:var(--pine); stroke:var(--pine-edge); stroke-width:1; }
-.nailer { fill:url(#hatch); stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
-.nailer:hover { stroke:var(--mark); stroke-width:1.5; }
-.king { fill:#D2B274; stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
-.jack { fill:#C6A45E; stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
-.cripple { fill:#EBDDB4; stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
-.sill { fill:#D2B274; stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
-.king:hover, .jack:hover, .cripple:hover, .sill:hover { fill:var(--mark); stroke:var(--mark); }
-.header { fill:url(#hatch); stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
-.header:hover { stroke:var(--mark); stroke-width:1.5; }
-.ro { fill:none; stroke:var(--mark); stroke-width:1; stroke-dasharray:5 3; }
-.rolabel { font-size:9.5px; fill:var(--mark); text-anchor:middle; }
-.rafter { fill:var(--pine); stroke:var(--pine-edge); stroke-width:1.2; stroke-linejoin:round; }
-.ridgeb { fill:url(#hatch); stroke:var(--pine-edge); stroke-width:1.2; }
-.plateb { fill:#CFCFC4; stroke:var(--rule); stroke-width:1; }
-.ghost { fill:none; stroke:var(--rule); stroke-width:1; stroke-dasharray:3 3; }
+.sheet section {
+  margin-bottom: 34px;
+}
+.sheet .wallhead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+.sheet .wallhead h3 {
+  font-size: 13px;
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.sheet .wallhead .meta {
+  font-size: 11px;
+  color: var(--soft);
+}
+.sheet .drawing {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 12px 10px 6px;
+  overflow-x: auto;
+}
+
+.sheet svg text {
+  font-family: var(--mono);
+  fill: var(--ink);
+}
+
+/* framing members */
+.sheet .stud { fill: var(--pine); stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
+.sheet .stud:hover, .sheet .stud.on { fill: var(--mark); stroke: var(--mark); }
+.sheet .plate { fill: var(--pine); stroke: var(--pine-edge); stroke-width: 1; }
+.sheet .nailer { fill: url(#hatch); stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
+.sheet .nailer:hover { stroke: var(--mark); stroke-width: 1.5; }
+.sheet .king { fill: #d2b274; stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
+.sheet .jack { fill: #c6a45e; stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
+.sheet .cripple { fill: #ebddb4; stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
+.sheet .sill { fill: #d2b274; stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
+.sheet .king:hover, .sheet .jack:hover, .sheet .cripple:hover, .sheet .sill:hover {
+  fill: var(--mark);
+  stroke: var(--mark);
+}
+.sheet .header { fill: url(#hatch); stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
+.sheet .header:hover { stroke: var(--mark); stroke-width: 1.5; }
+.sheet .ro { fill: none; stroke: var(--mark); stroke-width: 1; stroke-dasharray: 5 3; }
+.sheet .rolabel { font-size: 9.5px; fill: var(--mark); text-anchor: middle; }
+.sheet .rafter { fill: var(--pine); stroke: var(--pine-edge); stroke-width: 1.2; stroke-linejoin: round; }
+.sheet .ridgeb { fill: url(#hatch); stroke: var(--pine-edge); stroke-width: 1.2; }
+.sheet .plateb { fill: #cfcfc4; stroke: var(--rule); stroke-width: 1; }
+.sheet .ghost { fill: none; stroke: var(--rule); stroke-width: 1; stroke-dasharray: 3 3; }
 
 /* floor plan — skids read as underneath, everything else sits on top */
-.skid { fill:#C9C2AC; stroke:#8A8467; stroke-width:1; cursor:pointer; }
-.joist { fill:var(--pine); stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
-.rim { fill:#D2B274; stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
-.block { fill:#EBDDB4; stroke:var(--pine-edge); stroke-width:1; cursor:pointer; }
-.skid:hover, .joist:hover, .rim:hover, .block:hover { fill:var(--mark); stroke:var(--mark); }
-
-/* roof cut table */
-table.cuts { width:auto; min-width:300px; }
-table.cuts td { padding:3px 22px 3px 0; border-bottom:1px solid var(--rule); }
-table.cuts td:first-child { color:var(--soft); }
-table.cuts td:last-child { text-align:right; font-weight:700; padding-right:0; }
-.dim { stroke:var(--mark); stroke-width:1; fill:none; }
-.witness { stroke:var(--mark); stroke-width:.5; opacity:.55; }
-.dimtext { font-size:9.5px; fill:var(--mark); text-anchor:middle; }
-.note { font-size:9.5px; fill:var(--soft); }
-
-/* readout */
-.readout {
-  display:flex; gap:18px; flex-wrap:wrap; border-top:1px solid var(--rule);
-  margin-top:8px; padding:7px 2px 4px; font-size:11px; color:var(--soft); min-height:30px;
+.sheet .skid { fill: #c9c2ac; stroke: #8a8467; stroke-width: 1; cursor: pointer; }
+.sheet .joist { fill: var(--pine); stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
+.sheet .rim { fill: #d2b274; stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
+.sheet .block { fill: #ebddb4; stroke: var(--pine-edge); stroke-width: 1; cursor: pointer; }
+.sheet .skid:hover, .sheet .joist:hover, .sheet .rim:hover, .sheet .block:hover {
+  fill: var(--mark);
+  stroke: var(--mark);
 }
-.readout b { color:var(--mark); font-weight:700; }
 
-/* corner detail */
-.detailrow { display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
-.detailrow .legendtext { max-width:360px; font-size:11.5px; color:var(--soft); }
-.detailrow .legendtext p { margin:0 0 8px; }
+/* the drafting layer: dimension lines, witness ticks, notes */
+.sheet .dim { stroke: var(--mark); stroke-width: 1; fill: none; }
+.sheet .witness { stroke: var(--mark); stroke-width: 0.5; opacity: 0.55; }
+.sheet .dimtext { font-size: 9.5px; fill: var(--mark); text-anchor: middle; }
+.sheet .note { font-size: 9.5px; fill: var(--soft); }
 
-/* cut list */
-table { border-collapse:collapse; width:100%; font-size:12px; }
-th { text-align:left; font-size:10px; letter-spacing:.14em; text-transform:uppercase;
-     color:var(--soft); font-weight:600; border-bottom:1px solid var(--ink); padding:0 10px 5px 0; }
-td { padding:5px 10px 5px 0; border-bottom:1px solid var(--rule); }
-td.num, th.num { text-align:right; padding-right:18px; }
-tfoot td { border-bottom:0; border-top:2px solid var(--ink); font-weight:700; }
-.pt { color:var(--flag); font-size:10px; letter-spacing:.08em; }
-
-.warn { border-left:3px solid var(--flag); background:#fff; padding:9px 12px; margin-bottom:8px; font-size:11.5px; }
-.warn b { color:var(--flag); }
-
-/* openings editor */
-.opening { border:1px solid var(--rule); background:#fff; padding:8px 9px; margin-bottom:8px; }
-.ophead { display:flex; justify-content:space-between; align-items:center; margin-bottom:7px; }
-.oprow { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:6px; }
-.oprow label { display:block; font-size:10px; color:var(--soft); letter-spacing:.06em; text-transform:uppercase; }
-.oprow label input { margin-top:2px; }
-.oprow input:disabled { background:var(--panel); color:var(--soft); }
-button {
-  font-family:var(--mono); font-size:11px; padding:4px 9px; cursor:pointer;
-  background:#fff; color:var(--ink); border:1px solid var(--rule); border-radius:2px;
+/* the strip under a drawing that fills in as you point at pieces */
+.sheet .readout {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--rule);
+  margin-top: 8px;
+  padding: 7px 2px 4px;
+  font-size: 11px;
+  color: var(--soft);
+  min-height: 30px;
 }
-button:hover { border-color:var(--mark); color:var(--mark); }
-button:focus-visible { outline:2px solid var(--mark); outline-offset:1px; }
-.addrow { display:flex; gap:8px; }
+.sheet .readout b {
+  color: var(--mark);
+  font-weight: 700;
+}
 
-@media (prefers-reduced-motion:no-preference){ .stud, .nailer { transition:fill .12s, stroke .12s; } }
+/* roof + floor cut figures */
+.sheet table.cuts {
+  width: auto;
+  min-width: 300px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.sheet table.cuts td {
+  padding: 3px 22px 3px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.sheet table.cuts td:first-child { color: var(--soft); }
+.sheet table.cuts td:last-child { text-align: right; font-weight: 700; padding-right: 0; }
+
+.sheet .detailrow {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.sheet .detailrow .legendtext {
+  max-width: 360px;
+  font-size: 11.5px;
+  color: var(--soft);
+}
+.sheet .detailrow .legendtext p { margin: 0 0 8px; }
+
+/* Keyboard users step through members with the arrow keys; give the focused
+   drawing a ring the same way the chrome does. */
+.sheet svg:focus-visible {
+  outline: 2px solid var(--mark);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sheet .stud,
+  .sheet .nailer {
+    transition: fill 0.12s, stroke 0.12s;
+  }
+}

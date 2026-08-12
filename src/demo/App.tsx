@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { AlertTriangle, Info } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   boardFeet,
   cutList,
@@ -67,7 +69,7 @@ export function App() {
   const [wallsRef, wallsWidth] = useWidth<HTMLDivElement>(700);
 
   return (
-    <div className="layout">
+    <div className="min-h-screen lg:grid lg:grid-cols-[19rem_1fr]">
       <Controls
         form={form}
         set={set}
@@ -79,16 +81,34 @@ export function App() {
             : '—'
         }
       />
-      <main>
+      <main className="min-w-0 px-6 pt-6 pb-20 lg:px-9">
         {shown ? (
-          <Sheet spec={shown.spec} framing={shown.framing} error={result.error}
-            wallsRef={wallsRef} wallsWidth={wallsWidth} />
+          <Sheet
+            spec={shown.spec}
+            framing={shown.framing}
+            error={result.error}
+            wallsRef={wallsRef}
+            wallsWidth={wallsWidth}
+          />
         ) : (
-          <div className="warn">
-            <b>Check the dimensions.</b> {result.error}
-          </div>
+          <Alert variant="destructive">
+            <AlertTriangle />
+            <AlertTitle>Check the dimensions</AlertTitle>
+            <AlertDescription>{result.error}</AlertDescription>
+          </Alert>
         )}
       </main>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-muted-foreground text-[10px] font-semibold tracking-[0.14em] uppercase">
+        {label}
+      </span>
+      <span className="text-sm font-semibold tabular-nums">{value}</span>
     </div>
   );
 }
@@ -115,8 +135,7 @@ function Sheet({
     (n, w) =>
       n +
       w.members.filter(
-        (m) =>
-          m.role !== 'bottom-plate' && m.role !== 'top-plate' && m.role !== 'cap-plate',
+        (m) => m.role !== 'bottom-plate' && m.role !== 'top-plate' && m.role !== 'cap-plate',
       ).length,
     0,
   );
@@ -129,52 +148,55 @@ function Sheet({
 
   return (
     <>
-      <div className="titleblock">
-        <h2>
+      <header className="mb-6">
+        <h2 className="text-xl font-semibold tracking-tight tabular-nums">
           {formatLength(spec.width)} × {formatLength(spec.depth)} ×{' '}
           {formatLength(spec.wallHeight)} high
         </h2>
-        <div className="stat">
-          studs <b>{studCount}</b>
+        <div className="mt-4 flex flex-wrap gap-x-10 gap-y-4 border-t pt-4">
+          <Stat label="studs" value={studCount} />
+          <Stat label="pieces" value={pieces} />
+          <Stat label="board ft" value={boardFeet(rows).toFixed(0)} />
+          <Stat label="stud length" value={formatLength(framing.walls[0]!.studLength)} />
+          <Stat label="overall height" value={formatLength(framing.overallHeight)} />
         </div>
-        <div className="stat">
-          pieces <b>{pieces}</b>
+      </header>
+
+      {(error || framing.warnings.length > 0) && (
+        <div className="mb-6 flex flex-col gap-2.5">
+          {error && (
+            <Alert variant="destructive">
+              <AlertTriangle />
+              <AlertTitle>Check the dimensions</AlertTitle>
+              <AlertDescription>
+                {error} — still showing the last design that worked.
+              </AlertDescription>
+            </Alert>
+          )}
+          {framing.warnings.map((w) => (
+            <Alert key={w}>
+              <Info />
+              <AlertDescription>{w}</AlertDescription>
+            </Alert>
+          ))}
         </div>
-        <div className="stat">
-          board ft <b>{boardFeet(rows).toFixed(0)}</b>
+      )}
+
+      {/* The drawing set. Everything inside `.sheet` keeps the drafting look. */}
+      <div className="sheet rounded-lg border p-5 lg:p-6">
+        {framing.floor && <FloorPlan floor={framing.floor} />}
+
+        <div ref={wallsRef}>
+          {framing.walls.map((wall) => (
+            <WallElevation key={wall.spec.name} wall={wall} scale={scale} />
+          ))}
         </div>
-        <div className="stat">
-          stud length <b>{formatLength(framing.walls[0]!.studLength)}</b>
-        </div>
-        <div className="stat">
-          overall height <b>{formatLength(framing.overallHeight)}</b>
-        </div>
+
+        {framing.roof && <RoofSection roof={framing.roof} />}
+
+        <CornerDetail spec={spec} />
       </div>
 
-      <div>
-        {error && (
-          <div className="warn">
-            <b>Check the dimensions.</b> {error} — still showing the last design that worked.
-          </div>
-        )}
-        {framing.warnings.map((w) => (
-          <div className="warn" key={w}>
-            <b>Note.</b> {w}
-          </div>
-        ))}
-      </div>
-
-      {framing.floor && <FloorPlan floor={framing.floor} />}
-
-      <div ref={wallsRef}>
-        {framing.walls.map((wall) => (
-          <WallElevation key={wall.spec.name} wall={wall} scale={scale} />
-        ))}
-      </div>
-
-      {framing.roof && <RoofSection roof={framing.roof} />}
-
-      <CornerDetail spec={spec} />
       <CutList rows={rows} />
     </>
   );

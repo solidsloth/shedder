@@ -3,14 +3,14 @@
 // Vertical position comes straight from the engine's elevBottom/elevHeight —
 // this file never works out how high anything sits.
 
-import { useState } from 'react';
 import {
   formatInches,
   formatLength,
+  type Member,
   type MemberRole,
   type WallFraming,
 } from '../core/framing.ts';
-import { DimLine, HatchDefs, Readout, type ReadoutValue } from './svg.tsx';
+import { DimLine, HatchDefs, Readout, useScan, type ReadoutValue } from './svg.tsx';
 
 const CLS: Partial<Record<MemberRole, string>> = {
   'bottom-plate': 'plate',
@@ -41,8 +41,16 @@ const ORDER: Partial<Record<MemberRole, number>> = {
   'king-stud': 3,
 };
 
+const describe = (m: Member): ReadoutValue => ({
+  label: m.label,
+  facts: [
+    ...(m.center !== undefined ? [{ lead: 'center', value: formatInches(m.center) }] : []),
+    { lead: 'cut', value: formatLength(m.length) },
+  ],
+  note: m.note,
+});
+
 export function WallElevation({ wall, scale }: { wall: WallFraming; scale: number }) {
-  const [hover, setHover] = useState<ReadoutValue | null>(null);
   const { spec } = wall;
   const t = wall.thickness;
   const L = spec.length;
@@ -59,6 +67,7 @@ export function WallElevation({ wall, scale }: { wall: WallFraming; scale: numbe
   const X = (v: number) => v * scale;
 
   const sorted = [...wall.members].sort((a, b) => (ORDER[a.role] ?? 9) - (ORDER[b.role] ?? 9));
+  const scan = useScan(sorted, describe);
   const centers = wall.studCenters;
   const dimY = X(H) + 18;
   const overallY = dimY + 22;
@@ -74,15 +83,16 @@ export function WallElevation({ wall, scale }: { wall: WallFraming; scale: numbe
       </div>
       <div className="drawing">
         <svg
+          {...scan.svg}
           width={w}
           height={h}
           viewBox={`0 0 ${w} ${h}`}
           role="img"
-          aria-label={`${spec.name} wall elevation`}
+          aria-label={`${spec.name} wall elevation — ${sorted.length} pieces, arrow keys to step through them`}
         >
           <HatchDefs />
           <g transform={`translate(${originX},${padT})`}>
-            {sorted.map((m) => {
+            {sorted.map((m, i) => {
               const cls = CLS[m.role];
               const at =
                 m.center !== undefined ? ` · center ${formatInches(m.center)} from left` : '';
@@ -94,21 +104,9 @@ export function WallElevation({ wall, scale }: { wall: WallFraming; scale: numbe
                   width={Math.max(X(m.w), 1.5)}
                   height={X(m.elevHeight)}
                   className={cls}
-                  onMouseEnter={
-                    cls === 'plate'
-                      ? undefined
-                      : () =>
-                          setHover({
-                            label: m.label,
-                            facts: [
-                              ...(m.center !== undefined
-                                ? [{ lead: 'center', value: formatInches(m.center) }]
-                                : []),
-                              { lead: 'cut', value: formatLength(m.length) },
-                            ],
-                            note: m.note,
-                          })
-                  }
+                  // Plates are big background slabs — they'd steal every hover.
+                  // The keyboard walk still reaches them.
+                  {...(cls === 'plate' ? {} : scan.item(i))}
                 >
                   <title>{`${m.label} — ${formatLength(m.length)}${at}`}</title>
                 </rect>
@@ -159,7 +157,10 @@ export function WallElevation({ wall, scale }: { wall: WallFraming; scale: numbe
             <DimLine x1={0} x2={X(L)} y={overallY} label={formatLength(L)} />
           </g>
         </svg>
-        <Readout hint="Point at a stud for its exact center and cut length." value={hover} />
+        <Readout
+          hint="Point at a stud for its exact center and cut length — or focus the drawing and use the arrow keys."
+          value={scan.value}
+        />
       </div>
     </section>
   );

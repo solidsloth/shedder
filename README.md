@@ -28,8 +28,10 @@ src/demo/             the React UI
   RoofSection.tsx       rafter section and cut figures
   CornerDetail.tsx      corner post, plan view
   CutList.tsx           every stick
-  svg.tsx               dimension lines, hatch, readouts, width hook
+  svg.tsx               dimension lines, hatch, readouts, width + scan hooks
   form.ts               control state ⇄ ShedSpec
+  style.css             theme tokens + the sheet's own styles
+src/components/ui/    shadcn components (generated, yours to edit)
 vite.config.js        build config + the single-file inliner
 build/index.html      ← the built demo
 ```
@@ -40,6 +42,30 @@ React in it anywhere, so the planned React Native version reuses it untouched
 and only `src/demo/` gets rewritten. Every number on screen — including screen
 positions like `elevBottom` and the rafter outline polygons — comes out of the
 engine.
+
+## Two visual registers
+
+The UI deliberately runs two looks at once, and `style.css` is organised around
+the split:
+
+- **Chrome** — sidebar, title block, warnings, cut list. Sans-serif, shadcn
+  components on Tailwind, light warm-neutral surfaces. This is the tool.
+- **Sheet** — everything inside `.sheet`. Keeps the drafting palette and
+  monospace: paper ground, pine members, drafting dimension lines. This is the
+  drawing.
+
+They share one accent, the drafting green (`--mark`, which is also shadcn's
+`--primary`), so the contrast reads as intentional rather than as two designs
+bolted together. The practical payoff is that the drawings look like *output*
+instead of more page.
+
+shadcn components are generated into `src/components/ui/` — they are source in
+this repo, not a dependency, so retheming them is just editing them. There is no
+webfont: `shadcn init` pulls in Geist, which emits five `.woff2` files and would
+break the single-file build, so it was removed in favour of a system sans stack.
+
+A `.dark` palette is defined but nothing toggles it. A dark *sheet* needs light
+lines on a dark ground, which is a design job rather than a token swap.
 
 ## Commands
 
@@ -58,7 +84,18 @@ build step. `tsc` never emits anything now — Vite compiles, tsc only checks.
 and JS back into `build/index.html`, so it works both as a GitHub Pages upload
 and opened straight off disk over `file://` — a normal Vite build would break
 the second one, because `file://` blocks ES modules loaded from a separate
-`assets/` file. It costs about 240 KB (75 KB gzipped), most of that React.
+`assets/` file. It costs about 430 KB (130 KB gzipped): React, Radix, and the
+compiled Tailwind. Adding a shadcn component adds to that, so it is worth
+checking the number after `npm run build` rather than adding them freely.
+
+## Pointing at pieces
+
+Hovering a member fills the readout strip under its drawing. That used to be
+mouse-only. Each drawing is now focusable, the **arrow keys** step through its
+pieces, and **Escape** clears — so the same information reaches keyboard users.
+The readout is an `aria-live` region, so a screen reader announces each piece as
+you land on it. Wall plates are skipped on hover (they are big background slabs
+that would steal every pointer event) but the keyboard walk still reaches them.
 
 ## Conventions in the engine
 

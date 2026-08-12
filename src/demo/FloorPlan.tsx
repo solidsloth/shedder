@@ -1,11 +1,11 @@
 // Floor framing, plan view looking down: x is the shed's width, y its depth.
 // Skids draw first because they are underneath everything else.
 
-import { useState } from 'react';
 import {
   formatInches,
   formatLength,
   type FloorFraming,
+  type Member,
   type MemberRole,
 } from '../core/framing.ts';
 import {
@@ -13,6 +13,7 @@ import {
   DimLine,
   DimLineV,
   Readout,
+  useScan,
   useWidth,
   type ReadoutValue,
 } from './svg.tsx';
@@ -37,8 +38,17 @@ const BAND1 = 22;
 const BAND2 = 44;
 const TEXT = 13;
 
+const describe = (m: Member): ReadoutValue => ({
+  label: m.label,
+  facts: [
+    ...(m.center !== undefined ? [{ lead: 'center', value: formatInches(m.center) }] : []),
+    { lead: 'cut', value: formatLength(m.length) },
+    ...(m.treated ? [{ value: 'PT' }] : []),
+  ],
+  note: m.note,
+});
+
 export function FloorPlan({ floor }: { floor: FloorFraming }) {
-  const [hover, setHover] = useState<ReadoutValue | null>(null);
   const [hostRef, hostWidth] = useWidth<HTMLDivElement>(760);
 
   const { width: W, depth: D } = floor.spec;
@@ -57,6 +67,7 @@ export function FloorPlan({ floor }: { floor: FloorFraming }) {
   const X = (v: number) => v * scale;
 
   const sorted = [...floor.members].sort((a, b) => (ORDER[a.role] ?? 9) - (ORDER[b.role] ?? 9));
+  const scan = useScan(sorted, describe);
   const c = floor.joistCenters;
 
   // Skid run comes back out of the members so the UI never computes it.
@@ -91,14 +102,15 @@ export function FloorPlan({ floor }: { floor: FloorFraming }) {
       <div className="drawing">
         <div ref={hostRef}>
           <svg
+            {...scan.svg}
             width={w}
             height={h}
             viewBox={`0 0 ${w} ${h}`}
             role="img"
-            aria-label="Floor framing plan"
+            aria-label={`Floor framing plan — ${sorted.length} pieces, arrow keys to step through them`}
           >
             <g transform={`translate(${padL},${padT})`}>
-              {sorted.map((m) => (
+              {sorted.map((m, i) => (
                 <rect
                   key={m.id}
                   x={X(m.x)}
@@ -106,19 +118,7 @@ export function FloorPlan({ floor }: { floor: FloorFraming }) {
                   width={Math.max(X(m.w), 1.5)}
                   height={Math.max(X(m.d), 1.5)}
                   className={CLS[m.role]}
-                  onMouseEnter={() =>
-                    setHover({
-                      label: m.label,
-                      facts: [
-                        ...(m.center !== undefined
-                          ? [{ lead: 'center', value: formatInches(m.center) }]
-                          : []),
-                        { lead: 'cut', value: formatLength(m.length) },
-                        ...(m.treated ? [{ value: 'PT' }] : []),
-                      ],
-                      note: m.note,
-                    })
-                  }
+                  {...scan.item(i)}
                 >
                   <title>{`${m.label} — ${formatLength(m.length)}`}</title>
                 </rect>
@@ -179,7 +179,10 @@ export function FloorPlan({ floor }: { floor: FloorFraming }) {
             </g>
           </svg>
         </div>
-        <Readout hint="Point at a piece for its cut length." value={hover} />
+        <Readout
+          hint="Point at a piece for its cut length — or focus the drawing and use the arrow keys."
+          value={scan.value}
+        />
       </div>
       <CutsTable rows={rows} />
     </section>
